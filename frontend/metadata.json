@@ -1,0 +1,6 @@
+{
+  "name": "Dhurandhar",
+  "description": "An AI career copilot that helps discover opportunities, create tailored resumes, track applications and crack interviews.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
