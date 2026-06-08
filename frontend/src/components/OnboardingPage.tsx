@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useMemo, useState, FormEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Sparkles, 
@@ -29,6 +29,13 @@ interface OnboardingPageProps {
   onSwitchToLogin: () => void;
 }
 
+type QuestionOption = {
+  id: string;
+  label: string;
+  helper: string;
+  options: string[];
+};
+
 export default function OnboardingPage({ onOnboardingComplete, onBackToLanding, onSwitchToLogin }: OnboardingPageProps) {
   // Account Form states
   const [fullName, setFullName] = useState('');
@@ -47,6 +54,7 @@ export default function OnboardingPage({ onOnboardingComplete, onBackToLanding, 
   const [targetRole, setTargetRole] = useState(''); // Searchable input field
   const [experienceLevel, setExperienceLevel] = useState(''); // 0-1, 1-3, 3-5, 5+
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]); // Build ATS Resume, etc.
+  const [psychAnswers, setPsychAnswers] = useState<Record<string, string>>({});
 
   // Target role predefined search suggestions for smooth feel
   const [roleSearchFocused, setRoleSearchFocused] = useState(false);
@@ -68,6 +76,80 @@ export default function OnboardingPage({ onOnboardingComplete, onBackToLanding, 
     { id: 'prep', label: 'Interview Preparation' },
     { id: 'match', label: 'Job Matching' }
   ];
+
+  const psychQuestions: QuestionOption[] = [
+    {
+      id: 'work_style',
+      label: 'How do you prefer to work most of the time?',
+      helper: 'This helps the engine infer whether you fit structured, creative, or analytical roles.',
+      options: ['Highly structured', 'Balanced', 'Flexible', 'Self-directed']
+    },
+    {
+      id: 'communication_style',
+      label: 'Which communication style feels most natural?',
+      helper: 'This helps align roles with written, spoken, or stakeholder-heavy work.',
+      options: ['Written reports', 'One-to-one', 'Presentations', 'Cross-functional meetings']
+    },
+    {
+      id: 'ambiguity_response',
+      label: 'How do you react when a problem is ambiguous?',
+      helper: 'This helps match you to research, operations, or executive-support workflows.',
+      options: ['I want clear steps', 'I can adapt quickly', 'I like exploring options', 'I enjoy defining the structure']
+    },
+    {
+      id: 'task_preference',
+      label: 'Which type of tasks energize you most?',
+      helper: 'Use this to steer toward report writing, executive support, analysis, or product roles.',
+      options: ['Writing and summarizing', 'Coordinating people and schedules', 'Analyzing data', 'Building systems']
+    },
+    {
+      id: 'uncommon_role_interest',
+      label: 'Which lesser-known role style sounds most natural?',
+      helper: 'This helps discover roles that people often overlook, such as report writer or executive support positions.',
+      options: ['Report writer', 'Executive assistant', 'Executive coordinator', 'Technical writer', 'Operations coordinator', 'Research assistant', 'Policy analyst']
+    }
+  ];
+
+  const previewRoles = useMemo(() => {
+    const answersBlob = Object.values(psychAnswers).join(' ').toLowerCase();
+    const preview: { role: string; reason: string }[] = [];
+
+    if (targetRole) {
+      preview.push({
+        role: targetRole,
+        reason: 'Primary target role from your onboarding input.'
+      });
+    }
+
+    if (answersBlob.includes('report') || answersBlob.includes('writing') || answersBlob.includes('summarizing') || answersBlob.includes('document')) {
+      preview.push({ role: 'Report Writer', reason: 'Your answers point to structured writing and summarization work.' });
+      preview.push({ role: 'Technical Writer', reason: 'You appear suited for documentation-heavy roles.' });
+    }
+
+    if (answersBlob.includes('executive') || answersBlob.includes('meeting') || answersBlob.includes('schedule') || answersBlob.includes('coordination')) {
+      preview.push({ role: 'Executive Assistant', reason: 'Your answers suggest scheduling and stakeholder coordination strengths.' });
+      preview.push({ role: 'Executive Coordinator', reason: 'You may fit roles centered on support and cross-team coordination.' });
+    }
+
+    if (answersBlob.includes('research') || answersBlob.includes('analysis') || answersBlob.includes('insight') || answersBlob.includes('policy')) {
+      preview.push({ role: 'Research Assistant', reason: 'Your answers suggest analysis and structured investigation work.' });
+      preview.push({ role: 'Policy Analyst', reason: 'You may fit analytical roles that support decisions and research.' });
+    }
+
+    if (answersBlob.includes('operations') || answersBlob.includes('process') || answersBlob.includes('structure')) {
+      preview.push({ role: 'Operations Coordinator', reason: 'Your answers point to process-oriented and organized work.' });
+      preview.push({ role: 'Workflow Specialist', reason: 'You may fit work that improves systems and operating rhythm.' });
+    }
+
+    if (preview.length === 0) {
+      preview.push({
+        role: targetRole || 'General Software Engineer',
+        reason: 'Complete the rest of the onboarding to refine your search profile.'
+      });
+    }
+
+    return preview.filter((item, index, items) => items.findIndex((candidate) => candidate.role === item.role) === index).slice(0, 6);
+  }, [psychAnswers, targetRole]);
 
   const handleAccountCreate = (e: FormEvent) => {
     e.preventDefault();
@@ -103,7 +185,8 @@ export default function OnboardingPage({ onOnboardingComplete, onBackToLanding, 
       userRole,
       targetRole,
       experienceLevel,
-      selectedGoals
+      selectedGoals,
+      psychAnswers
     });
   };
 
@@ -600,7 +683,7 @@ export default function OnboardingPage({ onOnboardingComplete, onBackToLanding, 
                 </motion.div>
               )}
 
-              {/* flowStep 4: Questionnaire - Step 4/4 - Target Goals Checkboxes */}
+              {/* flowStep 4: Questionnaire - Step 4/5 - Psychology & Skill Fit */}
               {flowStep === 4 && (
                 <motion.div
                   key="step-qs4"
@@ -610,7 +693,83 @@ export default function OnboardingPage({ onOnboardingComplete, onBackToLanding, 
                   className="space-y-6"
                 >
                   <div className="space-y-1">
-                    <span className="text-[10px] uppercase tracking-wider font-extrabold text-primary">Onboarding • Step 4 of 4</span>
+                    <span className="text-[10px] uppercase tracking-wider font-extrabold text-primary">Onboarding • Step 4 of 5</span>
+                    <h3 className="text-xl font-bold text-zinc-950 font-sans">Psychology and skill-fit questions</h3>
+                    <p className="text-zinc-500 text-xs">These answers help match you to jobs and uncommon role types.</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {psychQuestions.map((question) => (
+                      <div key={question.id} className="space-y-2">
+                        <div>
+                          <span className="block text-xs font-bold uppercase tracking-wide text-zinc-600">{question.label}</span>
+                          <p className="text-xs text-zinc-500 mt-1">{question.helper}</p>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          {question.options.map((option) => {
+                            const isSelected = psychAnswers[question.id] === option;
+                            return (
+                              <button
+                                key={option}
+                                type="button"
+                                onClick={() => setPsychAnswers((prev) => ({ ...prev, [question.id]: option }))}
+                                className={`p-3 text-left border rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-between ${
+                                  isSelected
+                                    ? 'border-primary bg-primary/5 text-primary'
+                                    : 'border-zinc-200 bg-white text-zinc-805 hover:bg-zinc-50'
+                                }`}
+                              >
+                                <span>{option}</span>
+                                <span className={`w-4.5 h-4.5 rounded-full flex items-center justify-center border transition-all ${
+                                  isSelected
+                                    ? 'bg-primary border-primary text-white font-black'
+                                    : 'border-zinc-300'
+                                }`}>
+                                  {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-4 border-t border-zinc-100">
+                    <button
+                      onClick={() => setFlowStep(3)}
+                      className="text-xs text-zinc-400 hover:text-zinc-600 transition-all font-sans font-medium flex items-center gap-1 cursor-pointer"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      Back
+                    </button>
+                    <button
+                      disabled={Object.keys(psychAnswers).length < psychQuestions.length}
+                      onClick={() => setFlowStep(5)}
+                      className={`px-5 py-2.5 rounded-xl font-sans font-bold text-xs uppercase tracking-wider flex items-center gap-1 cursor-pointer transition-all ${
+                        Object.keys(psychAnswers).length === psychQuestions.length 
+                          ? 'bg-primary text-white hover:bg-primary-hover shadow-xs' 
+                          : 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
+                      }`}
+                    >
+                      Next Step
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* flowStep 5: Questionnaire - Step 5/5 - Target Goals Checkboxes */}
+              {flowStep === 5 && (
+                <motion.div
+                  key="step-qs5"
+                  initial={{ opacity: 0, x: 30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -30 }}
+                  className="space-y-6"
+                >
+                  <div className="space-y-1">
+                    <span className="text-[10px] uppercase tracking-wider font-extrabold text-primary">Onboarding • Step 5 of 5</span>
                     <h3 className="text-xl font-bold text-zinc-950 font-sans">What are your primary goals?</h3>
                     <p className="text-zinc-500 text-xs">Choose as many as represent your path goals</p>
                   </div>
@@ -644,7 +803,7 @@ export default function OnboardingPage({ onOnboardingComplete, onBackToLanding, 
 
                   <div className="flex items-center justify-between pt-4 border-t border-zinc-100">
                     <button
-                      onClick={() => setFlowStep(3)}
+                      onClick={() => setFlowStep(4)}
                       className="text-xs text-zinc-400 hover:text-zinc-600 transition-all font-sans font-medium flex items-center gap-1 cursor-pointer"
                     >
                       <ArrowLeft className="w-3.5 h-3.5" />
@@ -652,7 +811,7 @@ export default function OnboardingPage({ onOnboardingComplete, onBackToLanding, 
                     </button>
                     <button
                       disabled={selectedGoals.length === 0}
-                      onClick={() => setFlowStep(5)}
+                      onClick={() => setFlowStep(6)}
                       className={`px-5 py-2.5 rounded-xl font-sans font-bold text-xs uppercase tracking-wider flex items-center gap-1 cursor-pointer transition-all ${
                         selectedGoals.length > 0 
                           ? 'bg-primary text-white hover:bg-primary-hover shadow-xs' 
@@ -666,10 +825,10 @@ export default function OnboardingPage({ onOnboardingComplete, onBackToLanding, 
                 </motion.div>
               )}
 
-              {/* flowStep 5: Questionnaire Finished - Personalised Welcome Screen */}
-              {flowStep === 5 && (
+              {/* flowStep 6: Questionnaire Finished - Personalised Welcome Screen */}
+              {flowStep === 6 && (
                 <motion.div
-                  key="step-qs5"
+                  key="step-qs6"
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   className="space-y-6 text-center py-4"
@@ -697,8 +856,41 @@ export default function OnboardingPage({ onOnboardingComplete, onBackToLanding, 
                       <strong className="text-zinc-900 font-bold">{experienceLevel}</strong>
                     </div>
                     <div className="flex justify-between items-center text-left py-1 text-zinc-700 font-sans pt-2">
+                      <span className="font-medium text-zinc-500">Psychology Answers</span>
+                      <strong className="text-zinc-900 font-bold">{Object.keys(psychAnswers).length} Recorded</strong>
+                    </div>
+                    <div className="flex justify-between items-center text-left py-1 text-zinc-700 font-sans pt-2">
                       <span className="font-medium text-zinc-500">Target Goals Integrated</span>
                       <strong className="text-zinc-900 font-bold">{selectedGoals.length} Active Goals</strong>
+                    </div>
+                  </div>
+
+                  <div className="text-left rounded-xl border border-primary/15 bg-primary/5 p-4 space-y-3">
+                    <div>
+                      <span className="text-[10px] uppercase tracking-wider font-extrabold text-primary">Role preview</span>
+                      <p className="text-zinc-600 text-xs mt-1">These are inferred from your psychology, skill-fit, and uncommon-role answers.</p>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
+                      {previewRoles.map((role) => (
+                        <div key={role.role} className="rounded-lg border border-white/70 bg-white px-3 py-2.5 shadow-xs">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-bold text-zinc-950">{role.role}</p>
+                              <p className="text-[11px] text-zinc-500 mt-1 leading-relaxed">{role.reason}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setTargetRole(role.role);
+                                setFlowStep(5);
+                              }}
+                              className="shrink-0 rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-primary hover:bg-primary hover:text-white transition-all"
+                            >
+                              Use
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
 

@@ -1,8 +1,8 @@
 import { motion } from 'motion/react';
-import { Sparkles, ArrowRight, PlayCircle, Bell, Search, FileText, CheckSquare, GraduationCap, LayoutDashboard, HelpCircle, Eye, Briefcase, Send } from 'lucide-react';
+import { Sparkles, ArrowRight, PlayCircle, Search, FileText, LayoutDashboard, Send } from 'lucide-react';
 
 interface HeroSectionProps {
-  onEnterPortal: (startingTab?: string) => void;
+  onEnterPortal: (startingTab?: string, prefillData?: { jobTitle: string; company: string }) => void;
   onShowTutorial: () => void;
 }
 
@@ -56,6 +56,15 @@ export default function HeroSection({ onEnterPortal, onShowTutorial }: HeroSecti
               >
                 <PlayCircle className="w-5 h-5 text-zinc-500" />
                 See How It Works
+              </button>
+
+              <button
+                onClick={() => onEnterPortal('search')}
+                className="bg-zinc-950 hover:bg-zinc-800 text-white px-8 py-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer font-sans font-semibold text-base shadow-sm"
+                id="hero-search-btn"
+              >
+                <Search className="w-5 h-5" />
+                Search Jobs
               </button>
             </div>
           </motion.div>

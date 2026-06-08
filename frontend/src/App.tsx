@@ -9,6 +9,7 @@ import HeroSection from './components/HeroSection';
 import ResumeBuilder from './components/ResumeBuilder';
 import CoverLetter from './components/CoverLetter';
 import CareerRoadmap from './components/CareerRoadmap';
+import JobSearch from './components/JobSearch';
 import LoginPage from './components/LoginPage';
 import OnboardingPage from './components/OnboardingPage';
 
@@ -20,6 +21,7 @@ export default function App() {
   const [intendedTab, setIntendedTab] = useState<string>('resume');
   const [applications, setApplications] = useState<Application[]>(INITIAL_APPLICATIONS);
   const [resume, setResume] = useState<ResumeData>(INITIAL_RESUME);
+  const [onboardingProfile, setOnboardingProfile] = useState<any>(null);
   const [prefill, setPrefill] = useState<{ jobTitle: string; company: string } | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
 
@@ -35,7 +37,7 @@ export default function App() {
   };
 
   // Cross-Tab Navigator with prefill trigger integration
-  const handleNavigateToTab = (tab: string, prefillData?: { jobTitle: string; company: string }) => {
+  const handleNavigateToTab = (tab: string = 'resume', prefillData?: { jobTitle: string; company: string }) => {
     if (prefillData) {
       setPrefill(prefillData);
     } else {
@@ -43,7 +45,7 @@ export default function App() {
     }
     
     // Intercept workspace access and require credentials/onboarding
-    if (currentTab === 'landing' && tab !== 'landing' && tab !== 'login' && tab !== 'onboarding') {
+    if (currentTab === 'landing' && tab !== 'landing' && tab !== 'login' && tab !== 'onboarding' && tab !== 'search') {
       setIntendedTab(tab);
       setCurrentTab('onboarding');
     } else {
@@ -112,6 +114,7 @@ export default function App() {
               <OnboardingPage 
                 onOnboardingComplete={(userData) => {
                   console.log("Onboarding completed: ", userData);
+                  setOnboardingProfile(userData);
                   setCurrentTab(intendedTab);
                 }}
                 onBackToLanding={() => handleNavigateToTab('landing')}
@@ -130,6 +133,7 @@ export default function App() {
               {/* Inner console tabs rail */}
               <div className="flex border-b border-zinc-200/80 mb-8 overflow-x-auto gap-2 sm:gap-6 pb-0.5 scrollbar-none">
                 {[
+                  { id: 'search', label: 'Search Jobs' },
                   { id: 'resume', label: 'AI Resume Builder' },
                   { id: 'cover', label: 'Cover Letter Maker' },
                   { id: 'roadmap', label: 'Career Roadmaps' }
@@ -150,6 +154,13 @@ export default function App() {
 
               {/* Console core render pane routers */}
               <div className="w-full">
+                {currentTab === 'search' && (
+                  <JobSearch
+                    onAddApplication={handleAddApplication}
+                    onNavigateToTab={handleNavigateToTab}
+                    initialProfile={onboardingProfile}
+                  />
+                )}
                 {currentTab === 'resume' && (
                   <ResumeBuilder 
                     initialResume={resume} 
